@@ -26,6 +26,9 @@ import { generateOpenDriveXml, generateDynamicMapGeoJson } from '../utils/hdMapG
 import { generateIctTinLandXml, generateConstructionDxReportCsv } from '../utils/constructionDxGenerator';
 import { generatePeriodicInspectionCsv } from '../utils/assetManagementEngine';
 import { exportCivilDocsZip } from '../utils/civilDocsGenerator';
+import { generateSlopeSafetyReportCSV, generateSlopeLandXML } from '../utils/slopeReportGenerator';
+import { DEFAULT_SOIL_PRESETS } from '../utils/slopeStabilityEngine';
+import { optimizeGroundAnchorSystem } from '../utils/groundAnchorOptimizer';
 import { CivilProject } from '../types';
 
 interface ExportPackageModalProps {
@@ -172,7 +175,65 @@ END-ISO-10303-21;`;
     triggerDownload(content, 'Kumamoto_West_Ring_MLIT_Asset_Health_Record.csv', 'text/csv;charset=utf-8;');
   };
 
-  // 全10成果物一括エクスポート (BIM/CIM + HD-Map + Construction DX + 維持管理カルテ)
+  // 11. 国交省 豪雨斜面安定計算調書 CSV ＆ LandXML 1.2 法面補強サーフェス
+  const handleDownloadSlopeReports = () => {
+    const sampleStations = [
+      {
+        station: 'STA. 0+450',
+        stationMeter: 450,
+        cutHeight: 18.5,
+        slopeGradient: 0.8,
+        slopeLength: 23.7,
+        soilType: DEFAULT_SOIL_PRESETS.tertiary_mudstone,
+        normalFs: 1.34,
+        rainFs: 0.82,
+        criticalFailureRadius: 25.0,
+        poreWaterPressureKPa: 48.2,
+        seepageDepthM: 3.8,
+        isCritical: true,
+        isWarning: false,
+        status: 'critical' as const,
+        reinforcementApplied: true,
+      },
+      {
+        station: 'STA. 0+650',
+        stationMeter: 650,
+        cutHeight: 15.0,
+        slopeGradient: 0.85,
+        slopeLength: 19.7,
+        soilType: DEFAULT_SOIL_PRESETS.colluvial_soil,
+        normalFs: 1.25,
+        rainFs: 0.89,
+        criticalFailureRadius: 20.3,
+        poreWaterPressureKPa: 42.0,
+        seepageDepthM: 3.2,
+        isCritical: true,
+        isWarning: false,
+        status: 'critical' as const,
+        reinforcementApplied: true,
+      }
+    ];
+    const rain = {
+      intensityMmPerHour: 95,
+      durationHours: 3.5,
+      antecedentRainfallMm: 45,
+      groundwaterTableRise: 1.2,
+    };
+    const anchorMap = {
+      'STA. 0+450': optimizeGroundAnchorSystem(sampleStations[0], 1.20),
+      'STA. 0+650': optimizeGroundAnchorSystem(sampleStations[1], 1.20),
+    };
+
+    const csvContent = generateSlopeSafetyReportCSV(sampleStations, rain, anchorMap);
+    triggerDownload(csvContent, 'Kumamoto_West_Ring_Slope_Stability_Report.csv', 'text/csv;charset=utf-8;');
+
+    setTimeout(() => {
+      const xmlContent = generateSlopeLandXML(sampleStations, anchorMap);
+      triggerDownload(xmlContent, 'Kumamoto_West_Ring_Reinforced_Slope_LandXML.xml', 'application/xml');
+    }, 300);
+  };
+
+  // 全11成果物一括エクスポート (BIM/CIM + HD-Map + Construction DX + 維持管理カルテ + 斜面防災)
   const handleDownloadAll = () => {
     handleDownloadLandXml();
     setTimeout(handleDownloadBridgeIfc, 200);
@@ -184,7 +245,8 @@ END-ISO-10303-21;`;
     setTimeout(handleDownloadIctTin, 1400);
     setTimeout(handleDownloadConstructionDxReport, 1600);
     setTimeout(handleDownloadAssetInspectionCsv, 1800);
-    setDownloadSuccess('全10件の国交省BIM/CIM ＆ HD-Map ＆ 建設DX ＆ 点検カルテを一括保存しました！');
+    setTimeout(handleDownloadSlopeReports, 2000);
+    setDownloadSuccess('全11件の国交省BIM/CIM ＆ HD-Map ＆ 建設DX ＆ 点検カルテ ＆ 斜面防災調書を一括保存しました！');
     setTimeout(() => setDownloadSuccess(null), 4000);
   };
 
@@ -254,7 +316,7 @@ END-ISO-10303-21;`;
               className="bg-[#38bdf8] hover:bg-[#7bd0ff] text-[#090d13] px-3.5 py-1.5 rounded font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>全10成果物を一括保存 (BIM/CIM + HD-Map + 建設DX + カルテ)</span>
+              <span>全11成果物を一括保存 (BIM/CIM + HD-Map + 建設DX + カルテ + 斜面防災)</span>
             </button>
           </div>
 
@@ -538,6 +600,32 @@ END-ISO-10303-21;`;
                 className="px-3 py-1 bg-[#21262d] hover:bg-[#30363d] text-[#f0f6fc] border border-[#30363d] rounded text-[11px] flex items-center gap-1 transition-colors"
               >
                 <Download className="w-3 h-3 text-[#f43f5e]" />
+                保存
+              </button>
+            </div>
+
+            {/* 11. Slope Stability & Disaster Prevention Package */}
+            <div className="p-3.5 flex items-center justify-between hover:bg-[#161b22]/50 transition-colors bg-[#0d1117]/60">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded bg-[#a855f7]/15 text-[#a855f7] mt-0.5 border border-[#a855f7]/30">
+                  <CloudRain className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#f0f6fc] font-bold text-xs">国交省 豪雨斜面崩壊危険度カルテ ＆ 補強法面 LandXML 1.2</span>
+                    <span className="text-[9px] bg-[#a855f7]/20 text-[#a855f7] px-1 rounded font-bold">.csv + .xml</span>
+                    <span className="text-[9px] bg-[#10b981]/20 text-[#10b981] px-1 rounded">道路土工指針</span>
+                  </div>
+                  <div className="text-[#8b949e] text-[11px] mt-0.5">
+                    線状降水帯豪雨シミュレーション（修正フェレニウス法 Fs照査）、AI吹付枠工＋グラウンドアンカー最適設計調書およびTINサーフェス
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleDownloadSlopeReports}
+                className="px-3 py-1 bg-[#21262d] hover:bg-[#30363d] text-[#f0f6fc] border border-[#a855f7]/40 rounded text-[11px] flex items-center gap-1 transition-colors"
+              >
+                <Download className="w-3 h-3 text-[#a855f7]" />
                 保存
               </button>
             </div>

@@ -1,6 +1,6 @@
 export type DesignPlanId = 'A' | 'B' | 'C';
 
-export type CivilStudio = 'design' | 'construction' | 'simulation' | 'twin' | 'geolibre-terrain';
+export type CivilStudio = 'design' | 'construction' | 'simulation' | 'twin' | 'geolibre-terrain' | 'slope-stability';
 
 export type DesignSubModule = 'Road' | 'Bridge' | 'Tunnel';
 export type ConstructionSubModule = 'Earthwork' | 'Hydro';

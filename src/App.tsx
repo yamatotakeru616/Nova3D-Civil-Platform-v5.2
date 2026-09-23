@@ -15,6 +15,7 @@ import { EarthworkLogisticsWorkspace } from './components/EarthworkLogisticsWork
 import { HydroSimulationWorkspace } from './components/HydroSimulationWorkspace';
 import { DriverSightlineWorkspace } from './components/DriverSightlineWorkspace';
 import { GeoLibreTerrainWorkspace } from './components/GeoLibreTerrainWorkspace';
+import { SlopeStabilityWorkspace } from './components/SlopeStabilityWorkspace';
 import { ExportPackageModal } from './components/ExportPackageModal';
 import { ProjectManagerModal } from './components/ProjectManagerModal';
 import { CivilDeliverablesModal } from './components/CivilDeliverablesModal';
@@ -156,6 +157,9 @@ export default function App() {
         ) : activeDomain === 'Walkthrough' ? (
           /* DRIVER SIGHTLINE & VR WALKTHROUGH (道路構造令第11条 停止視距・トンネル明暗順応 60FPS走行) */
           <DriverSightlineWorkspace activeProject={activeProject} />
+        ) : activeDomain === 'Slope' ? (
+          /* SLOPE STABILITY & DISASTER AI WORKSPACE (豪雨・土砂崩れ崩壊シミュレーション ＆ 斜面安定工AI設計) */
+          <SlopeStabilityWorkspace />
         ) : (
           /* GENERAL CIVIL DIGITAL TWIN (総合土木デジタルツイン) */
           <>

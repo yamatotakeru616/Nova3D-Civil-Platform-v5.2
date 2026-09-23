@@ -58,6 +58,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   // 現在のドメインからアクティブなスタジオを導出
   const currentStudio: CivilStudio = (() => {
     if (activeDomain === 'GeoLibre') return 'geolibre-terrain';
+    if (activeDomain === 'Slope') return 'slope-stability';
     if (['Road', 'Bridge', 'Tunnel'].includes(activeDomain)) return 'design';
     if (['Earthwork', 'Hydro'].includes(activeDomain)) return 'construction';
     if (['Walkthrough', 'Interference', 'AI Proposals'].includes(activeDomain)) return 'simulation';
@@ -68,6 +69,9 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
     switch (studio) {
       case 'geolibre-terrain':
         setActiveDomain('GeoLibre');
+        break;
+      case 'slope-stability':
+        setActiveDomain('Slope');
         break;
       case 'design':
         if (!['Road', 'Bridge', 'Tunnel'].includes(activeDomain)) {
@@ -216,6 +220,23 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             <Car className="w-3.5 h-3.5" />
             <span>走行検証</span>
             <span className="text-[9px] bg-[#10b981]/20 text-[#10b981] px-1 rounded font-bold">VR</span>
+          </button>
+
+          {/* Studio: Slope Stability */}
+          <button
+            onClick={() => handleSelectStudio('slope-stability')}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 text-xs font-mono transition-all ${
+              currentStudio === 'slope-stability'
+                ? 'bg-[#a855f7] text-white font-bold shadow shadow-purple-950/40'
+                : 'text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#21262d]'
+            }`}
+            title="豪雨・斜面崩壊物理シミュレーション ＆ 斜面安定工AI設計基盤"
+          >
+            <CloudRain className="w-3.5 h-3.5 text-[#38bdf8]" />
+            <span>斜面防災</span>
+            <span className="text-[9px] bg-[#a855f7]/30 text-[#e9d5ff] px-1 rounded font-bold border border-[#a855f7]/40">
+              DEM
+            </span>
           </button>
 
           {/* Studio 4: Twin */}
