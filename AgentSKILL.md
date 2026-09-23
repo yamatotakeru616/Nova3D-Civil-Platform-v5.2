@@ -15,6 +15,8 @@
 | `SKILL_TUNNEL_SUPPORT_ADAPT` | 掘削支保パターン選定 | トンネル | 切羽地山評価点・弾性波速度に基づくNATM支保選定 | `stationM, rockMassRating` | 支保パターン(CI/CII/DI/DII) |
 | `SKILL_EARTHWORK_LP_SOLVE` | 土量配分線形計画法 | 土工計画 | ダンプ運搬距離・燃料消費を最小化する最適配分解 | `cutBlocks, fillBlocks, dumpCap` | 運搬マトリクス, CO2排出量 |
 | `SKILL_MLIT_LEGAL_AUDIT` | 道路構造令全線一括監査 | 法規認証 | 第11条〜第21条の全6大技術基準のリアルタイム判定 | `projectData` | PASS/WARN/FAILマトリクス |
+| `SKILL_SLOPE_STABILITY_SIMULATE` | 豪雨斜面崩壊シミュレーション | 斜面防災 | 降雨強度・間隙水圧上昇に伴う修正フェレニウス法Fs計算 | `intensityMmH, durationH, soilPreset` | 全測点Fs、崩壊危険判定 |
+| `SKILL_GROUND_ANCHOR_OPTIMIZE` | AI地山補強アンカー最適化 | 斜面防災 | 目標Fsを満たす吹付枠工＆グラウンドアンカー諸元自動選定 | `station, targetFs` | アンカー段数・打設長・概算工費 |
 | `SKILL_EXPORT_DELIVERABLES` | 国交省全成果物一括生成 | 納品 | LandXML, IFC, OpenDRIVE, i-Con CSV等の一括生成 | `packageFormat, targetPath` | 生成ファイル一覧, チェックサム |
 | `SKILL_MARKOV_LCC_PREDICT` | マルコフ50年LCC予測 | 維持管理 | 確率推移行列による予防保全 vs 事後保全の生涯費用算出 | `transitionMatrix, unitCost` | 50年劣化推移, 費用削減率 |
 
