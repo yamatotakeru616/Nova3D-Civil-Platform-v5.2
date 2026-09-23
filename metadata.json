@@ -1,0 +1,6 @@
+{
+  "name": "Nova3D Civil Platform v5.2",
+  "description": "AI-Native CAD × QGIS OS 土木土工・線形設計エンジニアリングワークステーション",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
