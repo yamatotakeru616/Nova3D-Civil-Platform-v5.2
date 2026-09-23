@@ -146,6 +146,10 @@ export interface VerticalPointOfIntersection {
   isDraggable?: boolean;
 }
 
+export type VPI = VerticalPointOfIntersection;
+export type StandardAssembly = CrossSectionAssembly;
+export type StandardParameters = RoadOrdinanceStandard;
+
 export type ViewportLayoutMode = 'split' | '2d' | '3d' | 'quad';
 
 export interface StationSeekInfo {

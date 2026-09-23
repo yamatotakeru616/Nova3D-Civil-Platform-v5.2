@@ -36,6 +36,10 @@ import {
 } from 'lucide-react';
 import { CivilProject, IntersectionPoint } from '../types';
 import { OpenDriveModal } from './OpenDriveModal';
+import { RoadCorridorThreeView } from './3d/RoadCorridorThreeView';
+import { Advanced2DCadPlanView } from './cad/Advanced2DCadPlanView';
+import { DynamicProfileEditor } from './profile/DynamicProfileEditor';
+import { AdvancedCrossSectionView } from './crossSection/AdvancedCrossSectionView';
 
 interface RoadDesignWorkspaceProps {
   onBackToMain?: () => void;
@@ -1116,7 +1120,7 @@ export const RoadDesignWorkspace: React.FC<RoadDesignWorkspaceProps> = ({
             }
           >
             {/* ================================================================= */}
-            {/* QUAD 1 / LEFT: 2D QGIS PLAN SPLINE VIEWPORT                       */}
+            {/* QUAD 1 / TOP-LEFT: 2D CAD / QGIS PLAN VIEWPORT                    */}
             {/* ================================================================= */}
             {(viewMode === 'split' || viewMode === '2d' || viewMode === 'quad') && (
               <div
@@ -1128,561 +1132,31 @@ export const RoadDesignWorkspace: React.FC<RoadDesignWorkspaceProps> = ({
                     : 'w-full'
                 } relative flex flex-col overflow-hidden bg-[#070b10] select-none min-h-0`}
               >
-                {/* 2D CAD Toolstrip HUD */}
-                <div className="bg-[#161b22]/90 backdrop-blur border-b border-[#30363d] px-2.5 py-1 z-20 flex items-center justify-between font-mono text-[10px]">
-                  {/* Left: Mode Switchers */}
-                  <div className="flex items-center gap-1">
-                    <span className="text-[#38bdf8] font-bold mr-1 flex items-center gap-1">
-                      <Compass className="w-3.5 h-3.5" />
-                      CAD
-                    </span>
-                    <button
-                      onClick={() => selectCadToolSkill('select')}
-                      className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
-                        cadTool === 'select'
-                          ? 'bg-[#38bdf8] text-[#090d13] font-bold shadow'
-                          : 'bg-[#21262d] text-[#8b949e] hover:text-[#f0f6fc]'
-                      }`}
-                      title="選択・移動ツール: IPをクリックで選択、ドラッグで移動"
-                    >
-                      <MousePointer className="w-2.5 h-2.5" />
-                      <span>選択/移動</span>
-                    </button>
-                    <button
-                      onClick={() => selectCadToolSkill('add_ip')}
-                      className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
-                        cadTool === 'add_ip'
-                          ? 'bg-[#10b981] text-[#090d13] font-bold shadow animate-pulse'
-                          : 'bg-[#21262d] text-[#8b949e] hover:text-[#10b981]'
-                      }`}
-                      title="IP追加ツール: 平面図上をクリックして新規IPを挿入"
-                    >
-                      <Plus className="w-2.5 h-2.5" />
-                      <span>IP追加</span>
-                    </button>
-                    <button
-                      onClick={() => selectCadToolSkill('delete_ip')}
-                      className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
-                        cadTool === 'delete_ip'
-                          ? 'bg-[#f43f5e] text-white font-bold shadow'
-                          : 'bg-[#21262d] text-[#8b949e] hover:text-[#f43f5e]'
-                      }`}
-                      title="IP削除ツール: 削除したいIPをクリック"
-                    >
-                      <Trash2 className="w-2.5 h-2.5" />
-                      <span>IP削除</span>
-                    </button>
-                  </div>
-
-                  {/* Right: Snapping & Layers Toggles */}
-                  <div className="flex items-center gap-1 text-[9px]">
-                    <button
-                      onClick={() => toggleSnapSettingSkill('cadastral5m')}
-                      className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 border ${
-                        snapSettings.cadastral5m
-                          ? 'bg-[#f59e0b]/15 text-[#f59e0b] border-[#f59e0b]/40 font-semibold'
-                          : 'bg-[#21262d] text-[#6e7681] border-transparent'
-                      }`}
-                      title="公図5.0m離隔マグネットスナップ"
-                    >
-                      <Target className="w-2.5 h-2.5" />
-                      <span>公図5m吸着</span>
-                    </button>
-                    <button
-                      onClick={() => toggleSnapSettingSkill('demSaddle')}
-                      className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 border ${
-                        snapSettings.demSaddle
-                          ? 'bg-[#10b981]/15 text-[#10b981] border-[#10b981]/40 font-semibold'
-                          : 'bg-[#21262d] text-[#6e7681] border-transparent'
-                      }`}
-                      title="DEM鞍部最適通過推奨ライン"
-                    >
-                      <span>〰 DEM鞍部</span>
-                    </button>
-                    <button
-                      onClick={() => toggleSnapSettingSkill('corridorRibbon')}
-                      className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 border ${
-                        snapSettings.corridorRibbon
-                          ? 'bg-[#38bdf8]/15 text-[#38bdf8] border-[#38bdf8]/40 font-semibold'
-                          : 'bg-[#21262d] text-[#6e7681] border-transparent'
-                      }`}
-                      title="車道・路肩・歩道境界リボン"
-                    >
-                      <span>═ リボン</span>
-                    </button>
-                    <button
-                      onClick={() => toggleSnapSettingSkill('slopeHatch')}
-                      className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 border ${
-                        snapSettings.slopeHatch
-                          ? 'bg-[#a855f7]/15 text-[#a855f7] border-[#a855f7]/40 font-semibold'
-                          : 'bg-[#21262d] text-[#6e7681] border-transparent'
-                      }`}
-                      title="切土・盛土法面展開ハッチング"
-                    >
-                      <span>▥ 法面</span>
-                    </button>
-                    <button
-                      onClick={() => toggleSnapSettingSkill('stationMarks')}
-                      className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 border ${
-                        snapSettings.stationMarks
-                          ? 'bg-[#8ed5ff]/15 text-[#8ed5ff] border-[#8ed5ff]/40 font-semibold'
-                          : 'bg-[#21262d] text-[#6e7681] border-transparent'
-                      }`}
-                      title="測点杭プロット (@20mピッチ)"
-                    >
-                      <span>☷ 測点杭</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Vector Canvas Container */}
-                <div className="flex-1 relative overflow-hidden">
-                  {/* Mode Banner when adding/deleting */}
-                  {cadTool === 'add_ip' && (
-                    <div className="absolute top-2 left-2 z-10 bg-[#10b981] text-[#090d13] px-2 py-0.5 rounded text-[10px] font-mono font-bold shadow-lg animate-pulse flex items-center gap-1">
-                      <Plus className="w-3 h-3" />
-                      クリックした地点に新規IPを挿入します
-                    </div>
-                  )}
-                  {cadTool === 'delete_ip' && (
-                    <div className="absolute top-2 left-2 z-10 bg-[#f43f5e] text-white px-2 py-0.5 rounded text-[10px] font-mono font-bold shadow-lg flex items-center gap-1">
-                      <Trash2 className="w-3 h-3" />
-                      削除したい交点（IP）をクリックしてください
-                    </div>
-                  )}
-
-                  {/* Technical Vector Plan Graphic */}
-                  <svg
-                    ref={svgRef}
-                    className={`w-full h-full ${
-                      cadTool === 'add_ip'
-                        ? 'cursor-crosshair'
-                        : cadTool === 'delete_ip'
-                        ? 'cursor-not-allowed'
-                        : 'cursor-crosshair'
-                    }`}
-                    preserveAspectRatio="none"
-                    viewBox="0 0 600 450"
-                    onClick={handleSvgClick}
-                  >
-                    {/* Background Grid Lines */}
-                    <defs>
-                      <pattern id="cadGrid" width="30" height="30" patternUnits="userSpaceOnUse">
-                        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#161b22" strokeWidth="0.8" />
-                      </pattern>
-                    </defs>
-                    <rect width="600" height="450" fill="url(#cadGrid)" />
-
-                    {/* Contour Lines (DEM) */}
-                    {demOverlay && (
-                      <g opacity="0.6">
-                        <path d="M-50,80 Q120,40 280,110 T650,90" fill="none" stroke="#21262d" strokeDasharray="3,3" strokeWidth="1.2" />
-                        <path d="M-50,140 Q150,120 310,180 T650,160" fill="none" stroke="#21262d" strokeDasharray="3,3" strokeWidth="1.2" />
-                        <path d="M-50,220 Q180,180 340,250 T650,230" fill="none" stroke="#21262d" strokeDasharray="3,3" strokeWidth="1.2" />
-                        <path d="M-50,310 Q210,270 380,330 T650,300" fill="none" stroke="#21262d" strokeDasharray="3,3" strokeWidth="1.2" />
-                        <path d="M-50,390 Q240,360 420,410 T650,380" fill="none" stroke="#21262d" strokeDasharray="3,3" strokeWidth="1.2" />
-                      </g>
-                    )}
-
-                    {/* DEM Saddle Recommended Corridor Line (鞍部推奨ライン) */}
-                    {snapSettings.demSaddle && (
-                      <g opacity="0.8">
-                        <path
-                          d="M 40,380 C 130,290 190,260 270,220 C 350,180 430,140 560,90"
-                          fill="none"
-                          stroke="#10b981"
-                          strokeDasharray="4,4"
-                          strokeWidth="1.5"
-                        />
-                        <text x="210" y="215" fill="#10b981" fontFamily="JetBrains Mono" fontSize="8">
-                          DEM鞍部（最小土量ルート）
-                        </text>
-                      </g>
-                    )}
-
-                    {/* Cadastral Parcel Bounds (民有地 買収制約) */}
-                    <polygon points="180,70 260,60 290,140 200,160" fill="rgba(245,158,11,0.03)" stroke="#484f58" strokeDasharray="4,2" strokeWidth="0.8" />
-                    <polygon points="260,60 340,50 370,130 290,140" fill="rgba(244,63,94,0.06)" stroke="#f43f5e" strokeOpacity="0.6" strokeWidth="0.9" />
-                    <text x="275" y="95" fill="#f43f5e" fontFamily="JetBrains Mono" fontSize="8" opacity="0.8">
-                      民有地（買収制約筆界）
-                    </text>
-
-                    {/* 5.0m Cadastral Safety Margin Buffer Line (公図5m離隔バッファ) */}
-                    {snapSettings.cadastral5m && (
-                      <g>
-                        <polyline
-                          points="170,170 200,175 295,155 375,145 390,135"
-                          fill="none"
-                          stroke="#f59e0b"
-                          strokeDasharray="3,3"
-                          strokeWidth="1.5"
-                          opacity="0.85"
-                        />
-                        <text x="300" y="165" fill="#f59e0b" fontFamily="JetBrains Mono" fontSize="7.5">
-                          ⌖ 5.0m セーフティ離隔線
-                        </text>
-                      </g>
-                    )}
-
-                    {/* Intersection Tangent Lines (全IPを結ぶ接線ポリライン) */}
-                    {(() => {
-                      const pointsStr = [
-                        '40,380',
-                        ...ips.map((ip) => `${ip.x ?? 380},${ip.y ?? 190}`),
-                        '560,90',
-                      ].join(' ');
-                      return (
-                        <polyline
-                          points={pointsStr}
-                          fill="none"
-                          stroke="#30363d"
-                          strokeDasharray="6,4"
-                          strokeWidth="1.5"
-                        />
-                      );
-                    })()}
-
-                    {/* Corridor Embankment/Cutting Buffer / Slope Hatching */}
-                    {snapSettings.slopeHatch && (
-                      <g opacity="0.9">
-                        {/* Embankment slope polygons */}
-                        <path
-                          d={(() => {
-                            const ipCoords = ips.map((ip) => ({ x: ip.x ?? 380, y: ip.y ?? 190 }));
-                            let d = `M 30,370 `;
-                            ipCoords.forEach((pt) => {
-                              d += `Q ${pt.x - 20},${pt.y + 10} ${pt.x},${pt.y - 15} `;
-                            });
-                            d += `L 570,80 L 550,100 `;
-                            ipCoords.slice().reverse().forEach((pt) => {
-                              d += `Q ${pt.x + 20},${pt.y - 10} ${pt.x},${pt.y + 15} `;
-                            });
-                            d += `Z`;
-                            return d;
-                          })()}
-                          fill="rgba(56,189,248,0.06)"
-                          stroke="rgba(56,189,248,0.3)"
-                          strokeWidth="1"
-                        />
-
-                        {/* Slope Hatching Ticks (法面ヒゲ線) */}
-                        {[
-                          { x1: 90, y1: 345, x2: 82, y2: 355 },
-                          { x1: 130, y1: 310, x2: 122, y2: 320 },
-                          { x1: 170, y1: 275, x2: 160, y2: 288 },
-                          { x1: 230, y1: 245, x2: 220, y2: 260 },
-                          { x1: 310, y1: 215, x2: 300, y2: 230 },
-                          { x1: 430, y1: 165, x2: 420, y2: 180 },
-                          { x1: 510, y1: 120, x2: 500, y2: 135 },
-                        ].map((tick, i) => (
-                          <line
-                            key={i}
-                            x1={tick.x1}
-                            y1={tick.y1}
-                            x2={tick.x2}
-                            y2={tick.y2}
-                            stroke="#38bdf8"
-                            strokeWidth="1.2"
-                            opacity="0.5"
-                          />
-                        ))}
-                      </g>
-                    )}
-
-                    {/* Corridor Ribbon Offsets (車道幅員 7m / 路肩 / 歩道多重線) */}
-                    {snapSettings.corridorRibbon && (
-                      <g opacity="0.75">
-                        {/* Left Roadway Edge (-3.5m) */}
-                        <path
-                          d={(() => {
-                            const pts = ips.map((ip) => `${(ip.x ?? 380) - 8},${(ip.y ?? 190) - 8}`);
-                            return `M 32,372 Q 170,230 ${pts[0]} T 552,82`;
-                          })()}
-                          fill="none"
-                          stroke="#38bdf8"
-                          strokeDasharray="2,2"
-                          strokeWidth="1"
-                        />
-                        {/* Right Roadway Edge (+3.5m) */}
-                        <path
-                          d={(() => {
-                            const pts = ips.map((ip) => `${(ip.x ?? 380) + 8},${(ip.y ?? 190) + 8}`);
-                            return `M 48,388 Q 190,250 ${pts[0]} T 568,98`;
-                          })()}
-                          fill="none"
-                          stroke="#38bdf8"
-                          strokeDasharray="2,2"
-                          strokeWidth="1"
-                        />
-                      </g>
-                    )}
-
-                    {/* Road Centerline Spline Alignment (計画中心線) */}
-                    <path
-                      d={(() => {
-                        const count = ips.length;
-                        if (count === 0) return 'M 40,380 L 560,90';
-                        if (count === 1) {
-                          const p = ips[0];
-                          return `M 40,380 Q ${p.x},${p.y} 560,90`;
-                        }
-                        // 複数IPのスプライン補間
-                        let d = `M 40,380 `;
-                        ips.forEach((ip, idx) => {
-                          const x = ip.x ?? 380;
-                          const y = ip.y ?? 190;
-                          if (idx === 0) {
-                            d += `C 120,300 ${x - 40},${y + 20} ${x},${y} `;
-                          } else {
-                            d += `S ${x - 30},${y + 15} ${x},${y} `;
-                          }
-                        });
-                        d += `T 560,90`;
-                        return d;
-                      })()}
-                      fill="none"
-                      stroke="#38bdf8"
-                      strokeLinecap="round"
-                      strokeWidth="3.2"
-                      className="cursor-pointer hover:stroke-[#7dd3fc] transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!svgRef.current) return;
-                        const rect = svgRef.current.getBoundingClientRect();
-                        const svgX = ((e.clientX - rect.left) / rect.width) * 600;
-                        const ratio = Math.max(0, Math.min(1, (svgX - 40) / 520));
-                        seekStationSkill(Math.round(ratio * 2440));
-                      }}
-                    />
-
-                    {/* Station Stakes Marks (@20m ピッチ) */}
-                    {snapSettings.stationMarks && (
-                      <g>
-                        {[
-                          { sta: 'BP No.0', staM: 0, x: 40, y: 380 },
-                          { sta: 'No.20', staM: 400, x: 120, y: 305 },
-                          { sta: 'No.40', staM: 800, x: 210, y: 245 },
-                          { sta: 'No.60', staM: 1200, x: 310, y: 210 },
-                          { sta: 'No.80', staM: 1600, x: 420, y: 165 },
-                          { sta: 'No.100', staM: 2000, x: 500, y: 125 },
-                          { sta: 'EP No.122', staM: 2440, x: 560, y: 90 },
-                        ].map((m, idx) => (
-                          <g
-                            key={idx}
-                            className="cursor-pointer group select-none"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              seekStationSkill(m.staM);
-                            }}
-                          >
-                            <circle
-                              cx={m.x}
-                              cy={m.y}
-                              r="4"
-                              fill="#8ed5ff"
-                              stroke="#090d13"
-                              strokeWidth="1"
-                              className="group-hover:scale-150 transition-transform group-hover:fill-[#f43f5e]"
-                            />
-                            <line x1={m.x - 4} y1={m.y + 4} x2={m.x + 4} y2={m.y - 4} stroke="#8ed5ff" strokeWidth="1.2" />
-                            <text
-                              x={m.x + 6}
-                              y={m.y + 10}
-                              fill="#8b949e"
-                              fontFamily="JetBrains Mono"
-                              fontSize="7.5"
-                              className="group-hover:fill-[#f43f5e] group-hover:font-bold transition-colors"
-                            >
-                              {m.sta}
-                            </text>
-                          </g>
-                        ))}
-                      </g>
-                    )}
-
-                    {/* Dynamic IP Handles (全IP描画) */}
-                    {/* Active Station Laser Needle & Cross Marker (四眼連動ニードル) */}
-                    {(() => {
-                      const t = Math.max(0, Math.min(1, currentStationM / 2440));
-                      const ip1 = ips[0] || { x: 200, y: 260 };
-                      const ipMid = ips[1] || ips[0] || { x: 380, y: 190 };
-                      const u = 1 - t;
-                      const curX = u * u * u * 40 + 3 * u * u * t * (ip1.x ?? 200) + 3 * u * t * t * (ipMid.x ?? 380) + t * t * t * 560;
-                      const curY = u * u * u * 380 + 3 * u * u * t * (ip1.y ?? 260) + 3 * u * t * t * (ipMid.y ?? 190) + t * t * t * 90;
-
-                      const dx = 3 * u * u * ((ip1.x ?? 200) - 40) + 6 * u * t * ((ipMid.x ?? 380) - (ip1.x ?? 200)) + 3 * t * t * (560 - (ipMid.x ?? 380));
-                      const dy = 3 * u * u * ((ip1.y ?? 260) - 380) + 6 * u * t * ((ipMid.y ?? 190) - (ip1.y ?? 260)) + 3 * t * t * (90 - (ipMid.y ?? 190));
-                      const len = Math.hypot(dx, dy) || 1;
-                      const nx = -dy / len;
-                      const ny = dx / len;
-                      const crossHalf = 26;
-
-                      return (
-                        <g className="pointer-events-none z-30">
-                          {/* 直交レーザー横断線 (切断断面位置) */}
-                          <line
-                            x1={curX - nx * crossHalf}
-                            y1={curY - ny * crossHalf}
-                            x2={curX + nx * crossHalf}
-                            y2={curY + ny * crossHalf}
-                            stroke="#f43f5e"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            opacity="0.95"
-                          />
-                          {/* 測点ニードルピン */}
-                          <circle cx={curX} cy={curY} r="7" fill="none" stroke="#f43f5e" strokeWidth="1.5" className="animate-ping opacity-75" />
-                          <circle cx={curX} cy={curY} r="4.5" fill="#f43f5e" stroke="#ffffff" strokeWidth="1.5" />
-                          {/* 測点ラベルバッジ */}
-                          <rect x={curX + 9} y={curY - 17} width="76" height="15" rx="3" fill="#0d1117" stroke="#f43f5e" strokeWidth="1" />
-                          <text x={curX + 13} y={curY - 6} fill="#f43f5e" fontFamily="JetBrains Mono" fontSize="8.5" fontWeight="bold">
-                            {stationInfo.stationStr}
-                          </text>
-                        </g>
-                      );
-                    })()}
-
-                    {/* Dynamic IP Handles (全IP描画) */}
-                    {ips.map((ip) => {
-                      const isSelected = ip.id === activeIpId;
-                      const isDraggingThis = ip.id === draggingIpId;
-                      const x = ip.x ?? 380;
-                      const y = ip.y ?? 190;
-                      return (
-                        <g
-                          key={ip.id}
-                          className="cursor-move select-none"
-                          onMouseDown={(e) => handleMouseDownIp(ip.id, e)}
-                          onMouseUp={handleDragEndInternal}
-                        >
-                          {/* Invisible expanded hit target (radius 22px) */}
-                          <circle cx={x} cy={y} r="22" fill="transparent" />
-
-                          {/* Ghost Guideline & Ripple when selected/dragging */}
-                          {isSelected && (
-                            <>
-                              <circle
-                                cx={x}
-                                cy={y}
-                                r={isDraggingThis ? 24 : 18}
-                                fill="none"
-                                stroke="#38bdf8"
-                                strokeDasharray="3,3"
-                                strokeWidth="1.2"
-                                opacity={isDraggingThis ? 0.9 : 0.6}
-                                className={isDraggingThis ? 'animate-spin' : ''}
-                              />
-                              <circle cx={x} cy={y} r="28" fill="none" stroke="#38bdf8" strokeWidth="0.5" opacity="0.3" />
-                            </>
-                          )}
-
-                          {/* Outer ring handle */}
-                          <circle
-                            cx={x}
-                            cy={y}
-                            r={isDraggingThis ? 9 : isSelected ? 8 : 6.5}
-                            fill={isDraggingThis ? '#38bdf8' : isSelected ? '#38bdf8' : '#0d1117'}
-                            stroke={
-                              cadTool === 'delete_ip'
-                                ? '#f43f5e'
-                                : isDraggingThis
-                                ? '#ffffff'
-                                : isSelected
-                                ? '#ffffff'
-                                : '#10b981'
-                            }
-                            strokeWidth={isDraggingThis ? 3 : isSelected ? 2.5 : 2}
-                            className="transition-transform duration-100 hover:scale-125"
-                          />
-
-                          {/* Center point */}
-                          <circle cx={x} cy={y} r="2" fill={isSelected ? '#090d13' : '#10b981'} pointerEvents="none" />
-
-                          {/* Label */}
-                          <text
-                            x={x + 12}
-                            y={y - 6}
-                            fill={isSelected ? '#38bdf8' : '#f0f6fc'}
-                            fontFamily="JetBrains Mono"
-                            fontSize="9"
-                            fontWeight="bold"
-                            pointerEvents="none"
-                          >
-                            {ip.id} {isSelected ? `[R=${ip.radius}m]` : ''}
-                          </text>
-                          <text
-                            x={x + 12}
-                            y={y + 5}
-                            fill="#8b949e"
-                            fontFamily="JetBrains Mono"
-                            fontSize="7.5"
-                            pointerEvents="none"
-                          >
-                            {ip.station}
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </svg>
-
-                  {/* Drag Follow HUD Card (アクティブIPのリアルタイム情報) */}
-                  {activeIp && (
-                    <div className="absolute top-3 left-3 bg-[#161b22]/95 backdrop-blur-md border border-[#38bdf8] p-2 rounded shadow-[0_8px_24px_rgba(0,0,0,0.8)] z-20 pointer-events-none font-mono text-[10px] max-w-xs">
-                      <div className="flex items-center justify-between gap-3 border-b border-[#30363d] pb-1 mb-1">
-                        <span className="text-[#38bdf8] font-bold flex items-center gap-1">
-                          <Move className="w-3 h-3" />
-                          {activeIp.id} 幾何諸元連動
-                        </span>
-                        <span
-                          className={`px-1 rounded font-bold text-[9px] ${
-                            activeIp.status === 'PASS'
-                              ? 'bg-[#10b981]/20 text-[#10b981]'
-                              : 'bg-[#f59e0b]/20 text-[#f59e0b]'
-                          }`}
-                        >
-                          {activeIp.status === 'PASS' ? 'FEASIBLE' : 'WARNING'}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px]">
-                        <div className="text-[#8b949e]">平面座標:</div>
-                        <div className="text-[#f0f6fc] font-bold">
-                          X = {activeIp.x ?? 380}, Y = {activeIp.y ?? 190}
-                        </div>
-                        <div className="text-[#8b949e]">曲線半径:</div>
-                        <div className="text-[#38bdf8] font-bold">
-                          R = {activeIp.radius.toFixed(0)}m {activeIp.radius >= 150 ? '≥ 150m' : '< 150m'}
-                        </div>
-                        <div className="text-[#8b949e]">クロソイド緩和長:</div>
-                        <div className="text-[#10b981] font-bold">
-                          A = {activeIp.aParam ?? 110} (L = {activeIp.clothoidL.toFixed(1)}m)
-                        </div>
-                        <div className="text-[#8b949e]">用地境界離隔:</div>
-                        <div className="text-[#10b981] font-bold">
-                          {dynamicLandClearance.toFixed(2)} m (買収回避成立)
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Mouse Coordinate Pill */}
-                  {hoveredSvgCoord && (
-                    <div className="absolute bottom-2 right-2 bg-[#0d1117]/85 backdrop-blur border border-[#30363d] px-2 py-0.5 rounded text-[9px] font-mono text-[#8b949e]">
-                      X: <span className="text-[#f0f6fc]">{hoveredSvgCoord.x}</span>, Y:{' '}
-                      <span className="text-[#f0f6fc]">{hoveredSvgCoord.y}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Compass Rose */}
-                <div className="absolute bottom-3 left-3 bg-[#161b22]/80 backdrop-blur p-1.5 rounded border border-[#30363d] flex flex-col items-center">
-                  <span className="text-[#38bdf8] font-bold text-xs">▲</span>
-                  <span className="font-mono text-[9px] text-[#f0f6fc] font-bold">N</span>
-                </div>
+                <Advanced2DCadPlanView
+                  ips={ips}
+                  activeIpId={activeIpId}
+                  activeIp={activeIp}
+                  cadTool={cadTool}
+                  snapSettings={snapSettings}
+                  currentStationM={currentStationM}
+                  roadLengthM={2440}
+                  assembly={assembly}
+                  dynamicLandClearance={dynamicLandClearance}
+                  dynamicRadius={dynamicRadius}
+                  onSelectCadTool={selectCadToolSkill}
+                  onToggleSnapSetting={toggleSnapSettingSkill}
+                  onSelectIp={selectIpSkill}
+                  onMoveIp={(id, x, y) => moveIpSkill(id, x, y)}
+                  onAddIp={(x, y) => addIpSkill(x, y)}
+                  onDeleteIp={(id) => deleteIpSkill(id)}
+                  onSeekStation={seekStationSkill}
+                  demOverlay={demOverlay}
+                />
               </div>
             )}
 
             {/* ================================================================= */}
-            {/* QUAD 2 / RIGHT: 3D PYVISTA CORRIDOR VIEWPORT                      */}
+            {/* QUAD 2 / TOP-RIGHT: THREE.JS 3D CORRIDOR VIEWPORT                 */}
             {/* ================================================================= */}
             {(viewMode === 'split' || viewMode === '3d' || viewMode === 'quad') && (
               <div
@@ -1692,431 +1166,63 @@ export const RoadDesignWorkspace: React.FC<RoadDesignWorkspaceProps> = ({
                     : viewMode === 'split'
                     ? 'w-1/2'
                     : 'w-full'
-                } relative overflow-hidden bg-[#090e15] select-none min-h-0`}
+                } relative overflow-hidden bg-[#090d13] select-none min-h-0`}
               >
-                {/* Canvas Top Tag */}
-                <div className="absolute top-2 left-2 z-10 bg-[#161b22]/90 backdrop-blur border border-[#30363d] px-2 py-0.5 rounded text-[10px] font-mono text-[#8b949e] flex items-center gap-2">
-                  <span className="text-[#38bdf8] font-bold">PyVista 3D CORRIDOR</span>
-                  <span className="text-[#6e7681]">|</span>
-                  <span>Mesh: LOD-3 / Shaded + Wireframe</span>
-                </div>
-
-                {/* 3D Perspective Vector Canvas */}
-                <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 600 450">
-                  <defs>
-                    <linearGradient id="roadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#161b22" />
-                      <stop offset="100%" stopColor="#21262d" />
-                    </linearGradient>
-                    <linearGradient id="embankCut" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.1" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Terrain Elevation Grid */}
-                  <path d="M -100,450 L 250,150 L 700,450 Z" fill="#0c1117" stroke="#1f242c" strokeWidth="1" />
-                  <line x1="250" y1="150" x2="-20" y2="450" stroke="#1f242c" strokeWidth="0.8" />
-                  <line x1="250" y1="150" x2="120" y2="450" stroke="#1f242c" strokeWidth="0.8" />
-                  <line x1="250" y1="150" x2="380" y2="450" stroke="#1f242c" strokeWidth="0.8" />
-                  <line x1="250" y1="150" x2="520" y2="450" stroke="#1f242c" strokeWidth="0.8" />
-
-                  {/* Dynamic 3D Bend & Elevation from IP offset */}
-                  {(() => {
-                    const bendX = Math.round(ip2Offset.dx * 14);
-                    const elevY = Math.round(ip2Offset.dy * 8);
-
-                    return (
-                      <g>
-                        {/* Cut/Fill Slope Volumes (連動変形) */}
-                        <polygon
-                          points={`${120 + Math.min(0, bendX)},380 ${230 + bendX},${170 - elevY} ${200 + bendX},${165 - elevY} 40,360`}
-                          fill="url(#embankCut)"
-                          opacity="0.7"
-                          stroke="#f43f5e"
-                          strokeWidth="0.8"
-                        />
-                        <polygon
-                          points={`${380 + Math.max(0, bendX)},380 ${270 + bendX},${170 - elevY} ${300 + bendX},${165 - elevY} 520,360`}
-                          fill="rgba(16,185,129,0.15)"
-                          stroke="#10b981"
-                          strokeWidth="0.8"
-                        />
-
-                        {/* Asphalt Road Surface (ベジエ湾曲追従) */}
-                        <path
-                          d={`M 140,430 Q ${235 + bendX},${290 - elevY} ${250 + Math.round(bendX * 1.3)},${160 - elevY} L ${280 + Math.round(bendX * 1.3)},${160 - elevY} Q ${365 + bendX},${290 - elevY} 460,430 Z`}
-                          fill="url(#roadGrad)"
-                          stroke="#484f58"
-                          strokeWidth="1.5"
-                        />
-
-                        {/* Road Center Marking (破線センターライン) */}
-                        <path
-                          d={`M 300,430 Q ${300 + bendX},${290 - elevY} ${265 + Math.round(bendX * 1.3)},${160 - elevY}`}
-                          stroke="#f0f6fc"
-                          strokeDasharray="14,12"
-                          strokeWidth="3"
-                          fill="none"
-                        />
-
-                        {/* Lane Edge Ribbons */}
-                        <path
-                          d={`M 180,430 Q ${250 + bendX},${290 - elevY} ${255 + Math.round(bendX * 1.3)},${160 - elevY}`}
-                          stroke="#8ed5ff"
-                          strokeWidth="2"
-                          fill="none"
-                        />
-                        <path
-                          d={`M 420,430 Q ${350 + bendX},${290 - elevY} ${275 + Math.round(bendX * 1.3)},${160 - elevY}`}
-                          stroke="#8ed5ff"
-                          strokeWidth="2"
-                          fill="none"
-                        />
-
-                        {/* Guardrails (波形ガードレール) */}
-                        <path
-                          d={`M 160,420 Q ${245 + bendX},${290 - elevY} ${252 + Math.round(bendX * 1.3)},${160 - elevY}`}
-                          stroke="#bdc8d1"
-                          strokeDasharray="3,1"
-                          strokeWidth="2"
-                          fill="none"
-                        />
-                        <path
-                          d={`M 440,420 Q ${355 + bendX},${290 - elevY} ${278 + Math.round(bendX * 1.3)},${160 - elevY}`}
-                          stroke="#bdc8d1"
-                          strokeDasharray="3,1"
-                          strokeWidth="2"
-                          fill="none"
-                        />
-
-                        {/* Station Slices (四眼連動レーザースキャンライン) */}
-                        {(() => {
-                          const t = Math.max(0, Math.min(1, currentStationM / 2440));
-                          // 手前 (0m, Y=410) -> 奥 (2440m, Y=175) への透視投影マッピング
-                          const pY = 410 - t * 235 - elevY * (0.3 + 0.7 * t);
-                          const pW = Math.max(12, 130 * (1 - t * 0.72));
-                          const pX = 300 + bendX * (0.2 + 0.8 * t);
-
-                          return (
-                            <g className="filter drop-shadow-[0_0_8px_rgba(244,63,94,0.9)]">
-                              {/* レーザー横断スキャンライン */}
-                              <line
-                                x1={pX - pW}
-                                y1={pY}
-                                x2={pX + pW}
-                                y2={pY}
-                                stroke="#f43f5e"
-                                strokeWidth={Math.max(1.8, 3.5 * (1 - t * 0.5))}
-                                strokeLinecap="round"
-                              />
-                              {/* センターニードル */}
-                              <circle cx={pX} cy={pY} r={Math.max(2.5, 4.5 * (1 - t * 0.5))} fill="#f43f5e" stroke="#ffffff" strokeWidth="1" />
-                              {/* 測点ラベル */}
-                              <rect
-                                x={pX + 8}
-                                y={pY - 14}
-                                width="72"
-                                height="13"
-                                rx="2"
-                                fill="#0d1117"
-                                stroke="#f43f5e"
-                                strokeWidth="0.8"
-                                opacity="0.95"
-                              />
-                              <text
-                                x={pX + 11}
-                                y={pY - 4}
-                                fill="#f43f5e"
-                                fontFamily="JetBrains Mono"
-                                fontSize="7.5"
-                                fontWeight="bold"
-                              >
-                                {stationInfo.stationStr}
-                              </text>
-                            </g>
-                          );
-                        })()}
-                      </g>
-                    );
-                  })()}
-                </svg>
-
-                {/* 3D HUD Telemetry Floating Card */}
-                <div className="absolute bottom-3 right-3 bg-[#161b22]/90 backdrop-blur-md border border-[#484f58] p-2.5 rounded shadow-[0_4px_20px_rgba(0,0,0,0.7)] w-68 z-20 font-mono text-[10px]">
-                  <div className="flex items-center justify-between border-b border-[#30363d] pb-1 mb-1.5">
-                    <span className="text-[#f0f6fc] font-bold flex items-center gap-1">
-                      コリドー現況幾何テレメトリ
-                    </span>
-                    <span className="text-[#f43f5e] font-bold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f43f5e] animate-ping" />
-                      {stationInfo.stationStr}
-                    </span>
-                  </div>
-                  <div className="space-y-1 text-[9px]">
-                    <div className="flex justify-between">
-                      <span className="text-[#8b949e]">縦断勾配 (Slope i):</span>
-                      <span className="text-[#f0f6fc] font-bold">+2.34 % (上り)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#8b949e]">曲線半径 (Radius):</span>
-                      <span className="text-[#38bdf8] font-bold">R = {dynamicRadius}.0 m</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#8b949e]">建築限界クリアランス:</span>
-                      <span className="text-[#10b981] font-bold">H = 6.20 m (規格4.5m PASS)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#8b949e]">片勾配合成 (Super-elev):</span>
-                      <span className="text-[#f0f6fc] font-bold">i_c = 5.0 % (拡幅 +0.50m)</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* View Gizmo */}
-                <div className="absolute top-2 right-2 bg-[#161b22]/80 backdrop-blur p-1 rounded border border-[#30363d] flex items-center gap-1 font-mono text-[9px] text-[#6e7681]">
-                  <span className="text-[#f43f5e] font-bold">X</span>
-                  <span className="text-[#10b981] font-bold">Y</span>
-                  <span className="text-[#38bdf8] font-bold">Z</span>
-                  <span className="ml-1">PERSPECTIVE</span>
-                </div>
+                <RoadCorridorThreeView
+                  ips={ips}
+                  vpis={vpis}
+                  assembly={assembly}
+                  currentStationM={currentStationM}
+                  onSeekStation={seekStationSkill}
+                  isPlayingDrive={isPlayingDrive}
+                  onTogglePlayDrive={togglePlayDriveSkill}
+                  roadLengthM={2440}
+                />
               </div>
             )}
 
             {/* ================================================================= */}
-            {/* QUAD 3 / BOTTOM-LEFT: PROFILE & VPI DYNAMIC EDITOR                */}
+            {/* QUAD 3 / BOTTOM-LEFT: PROFILE & VPI DYNAMIC ENGINE                */}
             {/* ================================================================= */}
             {viewMode === 'quad' && (
-              <div className="border-r border-[#30363d] bg-[#090d13] relative flex flex-col overflow-hidden p-2 select-none font-mono min-h-0">
-                {/* Quad 3 Header */}
-                <div className="flex items-center justify-between pb-1 mb-1 border-b border-[#30363d] text-[10px]">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#38bdf8] font-bold flex items-center gap-1">
-                      <Layers className="w-3.5 h-3.5" />
-                      縦断プロファイル (Profile & VPI)
-                    </span>
-                    <span className="text-[9px] text-[#6e7681]">1:1000 / 1:200 (Z 5.0x)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 bg-[#161b22] px-1.5 py-0.5 rounded border border-[#30363d]">
-                      <span className="text-[#8b949e] text-[9px]">VPI-02 標高:</span>
-                      <button
-                        onClick={() => {
-                          const v2 = vpis.find((v) => v.id === 'VPI-02');
-                          if (v2) moveVpiSkill('VPI-02', Math.max(45, v2.elevationM - 0.5));
-                        }}
-                        className="px-1 py-0.2 bg-[#21262d] hover:bg-[#30363d] text-[#f0f6fc] rounded text-[8px]"
-                        title="VPI-02標高 -0.5m"
-                      >
-                        -0.5m
-                      </button>
-                      <strong className="text-[#38bdf8] text-[9px]">
-                        {vpis.find((v) => v.id === 'VPI-02')?.elevationM.toFixed(2)}m
-                      </strong>
-                      <button
-                        onClick={() => {
-                          const v2 = vpis.find((v) => v.id === 'VPI-02');
-                          if (v2) moveVpiSkill('VPI-02', Math.min(95, v2.elevationM + 0.5));
-                        }}
-                        className="px-1 py-0.2 bg-[#21262d] hover:bg-[#30363d] text-[#f0f6fc] rounded text-[8px]"
-                        title="VPI-02標高 +0.5m"
-                      >
-                        +0.5m
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quad 3 SVG Profile Diagram */}
-                <div className="flex-1 relative overflow-hidden">
-                  <svg
-                    className="w-full h-full cursor-crosshair"
-                    preserveAspectRatio="none"
-                    viewBox="0 0 700 130"
-                    onClick={handleProfileSvgClick}
-                  >
-                    {/* Grid lines */}
-                    <line x1="0" y1="30" x2="700" y2="30" stroke="#1c2026" strokeWidth="1" />
-                    <line x1="0" y1="65" x2="700" y2="65" stroke="#1c2026" strokeWidth="1" />
-                    <line x1="0" y1="100" x2="700" y2="100" stroke="#1c2026" strokeWidth="1" />
-                    <line x1="120" y1="0" x2="120" y2="130" stroke="#1c2026" strokeWidth="1" />
-                    <line x1="280" y1="0" x2="280" y2="130" stroke="#1c2026" strokeWidth="1" />
-                    <line x1="450" y1="0" x2="450" y2="130" stroke="#1c2026" strokeWidth="1" />
-                    <line x1="600" y1="0" x2="600" y2="130" stroke="#1c2026" strokeWidth="1" />
-
-                    {/* Ground DEM Line (Dynamic DEM based on IPs) */}
-                    <path
-                      d={dynamicProfilePaths.groundPath}
-                      fill="none"
-                      stroke="#6e7681"
-                      strokeDasharray="4,3"
-                      strokeWidth="1.5"
-                    />
-
-                    {/* Dynamic VPI & Cut/Fill Hatch */}
-                    {(() => {
-                      const vpi2 = vpis.find((v) => v.id === 'VPI-02') || { elevationM: 64.98 };
-                      const vpiElevDiff = (vpi2.elevationM - 64.98);
-                      const vpiY = Math.round(45 - vpiElevDiff * 1.5);
-                      const needleX = Math.round((currentStationM / 2440) * 700);
-
-                      return (
-                        <>
-                          {/* Cut Hatch (Rose - Dynamic from IPs & VPIs) */}
-                          <path
-                            d={dynamicProfilePaths.cutHatchPath}
-                            fill="rgba(244,63,94,0.28)"
-                          />
-                          {/* Fill Hatch (Green - Dynamic from IPs & VPIs) */}
-                          <path
-                            d={dynamicProfilePaths.fillHatchPath}
-                            fill="rgba(16,185,129,0.28)"
-                          />
-
-                          {/* Design Grade Line (Cyan Solid - Dynamic VPIs) */}
-                          <path
-                            d={dynamicProfilePaths.designPath}
-                            fill="none"
-                            stroke="#38bdf8"
-                            strokeWidth="2.5"
-                          />
-
-                          {/* VPI Handles */}
-                          <circle cx="240" cy="70" r="4" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
-                          <circle
-                            cx="450"
-                            cy={vpiY}
-                            r="6"
-                            fill="#38bdf8"
-                            stroke="#ffffff"
-                            strokeWidth="2"
-                            className="cursor-ns-resize"
-                          />
-                          <text x="460" y={vpiY - 4} fill="#38bdf8" fontSize="9" fontWeight="bold">
-                            VPI-02 ({vpi2.elevationM.toFixed(1)}m)
-                          </text>
-
-                          {/* Slope Text */}
-                          <text x="100" y="72" fill="#8ed5ff" fontSize="8">+1.20%</text>
-                          <text x="320" y="48" fill={Math.abs(vpi2.gradeInPercent ?? 2.34) > standard.maxGradePercent ? '#f43f5e' : '#38bdf8'} fontSize="8" fontWeight="bold">
-                            +{(vpi2.gradeInPercent ?? 2.34).toFixed(2)}% (L=435m)
-                          </text>
-                          <text x="560" y="55" fill="#10b981" fontSize="8">-1.50%</text>
-
-                          {/* Quad Laser Needle (完全同期) */}
-                          <g className="filter drop-shadow-[0_0_8px_rgba(244,63,94,0.9)] pointer-events-none">
-                            <line x1={needleX} y1="0" x2={needleX} y2="130" stroke="#f43f5e" strokeWidth="2" strokeDasharray="3,2" />
-                            <circle cx={needleX} cy={Math.max(20, Math.min(115, 130 - (stationInfo.designElevationM - 35) * 1.35))} r="4" fill="#f43f5e" stroke="#ffffff" strokeWidth="1" />
-                            <rect x={Math.min(610, needleX + 5)} y="10" width="82" height="15" rx="2" fill="#0d1117" stroke="#f43f5e" strokeWidth="0.8" />
-                            <text x={Math.min(610, needleX + 5) + 4} y="21" fill="#f43f5e" fontSize="8" fontWeight="bold">
-                              {stationInfo.stationStr}
-                            </text>
-                          </g>
-                        </>
-                      );
-                    })()}
-                  </svg>
-                </div>
-
-                {/* Quad 3 Bottom Bar */}
-                <div className="flex items-center justify-between text-[9px] text-[#8b949e] border-t border-[#30363d] pt-1 mt-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#38bdf8]">FH: {stationInfo.designElevationM}m</span>
-                    <span className="text-[#6e7681]">GH: {stationInfo.groundElevationM}m</span>
-                    <span className={stationInfo.cutOrFillHeightM < 0 ? 'text-[#f43f5e]' : 'text-[#10b981]'}>
-                      切盛: {stationInfo.cutOrFillHeightM > 0 ? `+${stationInfo.cutOrFillHeightM}` : stationInfo.cutOrFillHeightM}m
-                    </span>
-                  </div>
-                  <div className="text-[#10b981] font-bold">令第20条 縦断勾配 PASS</div>
-                </div>
+              <div className="border-r border-[#30363d] bg-[#090d13] relative flex flex-col overflow-hidden select-none font-mono min-h-0">
+                <DynamicProfileEditor
+                  vpis={vpis}
+                  standard={standard}
+                  currentStationM={currentStationM}
+                  roadLengthM={2440}
+                  dynamicProfilePaths={dynamicProfilePaths}
+                  onSelectVpi={(id) => selectVpiSkill(id)}
+                  onMoveVpi={(id, elev) => moveVpiSkill(id, elev)}
+                  onSeekStation={seekStationSkill}
+                  activeVpiId={activeVpiId}
+                />
               </div>
             )}
 
             {/* ================================================================= */}
-            {/* QUAD 4 / BOTTOM-RIGHT: CROSS SECTION & CUT-FILL SLICER            */}
+            {/* QUAD 4 / BOTTOM-RIGHT: CROSS SECTION MULTI-LAYER SLICER           */}
             {/* ================================================================= */}
             {viewMode === 'quad' && (
-              <div className="bg-[#090d13] relative flex flex-col overflow-hidden p-2 select-none font-mono min-h-0">
-                {/* Quad 4 Header */}
-                <div className="flex items-center justify-between pb-1 mb-1 border-b border-[#30363d] text-[10px]">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#f43f5e] font-bold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f43f5e] animate-ping" />
-                      横断スライサー ({stationInfo.stationStr})
-                    </span>
-                    <span className="text-[9px] text-[#38bdf8] font-semibold">{stationInfo.pileNumber}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[9px]">
-                    <span className="text-[#8b949e]">片勾配:</span>
-                    <span className="text-[#a855f7] font-bold">{stationInfo.superelevationPercent}%</span>
-                    <span className="text-[#8b949e]">幅員:</span>
-                    <span className="text-[#38bdf8] font-bold">{assembly.totalRoadwayWidth.toFixed(2)}m</span>
-                  </div>
-                </div>
-
-                {/* Quad 4 SVG Cross Section Diagram */}
-                <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-                  <svg className="w-full h-full max-h-44" viewBox="0 0 320 120">
-                    {/* Ground Line */}
-                    <path d="M 10,95 Q 100,88 160,78 T 310,55" fill="none" stroke="#6e7681" strokeDasharray="3,3" strokeWidth="1.2" />
-
-                    {/* Cut Slope Left (切土のり面連動) */}
-                    <line
-                      x1={Math.round(45 - (stationInfo.cutAreaM2 - 14) * 1.8)}
-                      y1={Math.round(45 - (stationInfo.cutAreaM2 - 14) * 1.4)}
-                      x2="90"
-                      y2="76"
-                      stroke="#f43f5e"
-                      strokeWidth="2"
-                    />
-                    <polygon
-                      points={`${Math.round(45 - (stationInfo.cutAreaM2 - 14) * 1.8)},${Math.round(45 - (stationInfo.cutAreaM2 - 14) * 1.4)} 90,76 90,90 10,95`}
-                      fill="rgba(244,63,94,0.2)"
-                    />
-
-                    {/* Pavement Structure with Cant Rotation */}
-                    <g transform={`rotate(${(stationInfo.superelevationPercent - 2.0) * 0.9}, 160, 77)`}>
-                      <rect x="90" y="74" width="140" height="8" fill="#21262d" stroke="#38bdf8" strokeWidth="1.5" />
-                      <line x1="160" y1="74" x2="160" y2="82" stroke="#f0f6fc" strokeWidth="1.5" />
-                    </g>
-
-                    {/* Sidewalk Right */}
-                    <rect x="230" y="70" width="40" height="12" fill="#161b22" stroke="#bdc8d1" strokeWidth="1" />
-
-                    {/* Fill Slope Right (盛土のり面連動) */}
-                    <line
-                      x1="270"
-                      y1="76"
-                      x2={Math.round(295 + (stationInfo.fillAreaM2 - 14) * 1.6)}
-                      y2={Math.round(102 + (stationInfo.fillAreaM2 - 14) * 0.9)}
-                      stroke="#10b981"
-                      strokeWidth="2"
-                    />
-                    <polygon
-                      points={`230,82 270,76 ${Math.round(295 + (stationInfo.fillAreaM2 - 14) * 1.6)},${Math.round(102 + (stationInfo.fillAreaM2 - 14) * 0.9)} 310,55 230,72`}
-                      fill="rgba(16,185,129,0.2)"
-                    />
-
-                    {/* Dimensions & Labels */}
-                    <text x="105" y="65" fill="#8ed5ff" fontSize="8" fontWeight="bold">
-                      車道 W={(assembly.laneWidth * 2).toFixed(1)}m (i={stationInfo.superelevationPercent.toFixed(1)}%)
-                    </text>
-                    <text x="235" y="62" fill="#bdc8d1" fontSize="7">
-                      歩道{assembly.sidewalkWidth}m
-                    </text>
-                  </svg>
-                </div>
-
-                {/* Quad 4 Bottom Specs Grid */}
-                <div className="grid grid-cols-4 gap-1 text-[9px] bg-[#161b22] p-1 rounded border border-[#30363d] mt-0.5">
-                  <div>切土面積: <strong className="text-[#f43f5e]">{stationInfo.cutAreaM2} m²</strong></div>
-                  <div>盛土面積: <strong className="text-[#10b981]">{stationInfo.fillAreaM2} m²</strong></div>
-                  <div>切盛比: <strong className="text-[#10b981]">{dynamicEarthworkBalance.ratioPercent}%</strong></div>
-                  <div>土量収支: <span className="text-[#38bdf8]">{dynamicEarthworkBalance.netVolumeM3 > 0 ? '盛土超過' : '切土超過'}</span></div>
-                </div>
+              <div className="bg-[#090d13] relative flex flex-col overflow-hidden select-none font-mono min-h-0">
+                <AdvancedCrossSectionView
+                  assembly={assembly}
+                  stationStr={stationInfo.stationStr}
+                  pileNumber={stationInfo.pileNumber}
+                  currentStationM={currentStationM}
+                  designElevationM={stationInfo.designElevationM}
+                  groundElevationM={stationInfo.groundElevationM}
+                  cutOrFillHeightM={stationInfo.cutOrFillHeightM}
+                  superelevationPercent={stationInfo.superelevationPercent}
+                  cutAreaM2={stationInfo.cutAreaM2}
+                  fillAreaM2={stationInfo.fillAreaM2}
+                  onUpdateAssembly={updateAssemblySkill}
+                />
               </div>
             )}
           </div>
+
+
 
           {/* =================================================================== */}
           {/* BOTTOM INSPECTION TRAY: PROFILE & CROSS SECTION & MASS HAUL CURVE   */}
